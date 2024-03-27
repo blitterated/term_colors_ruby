@@ -72,11 +72,7 @@ module TerminalColorsDemo
   end
 
   def show_all_rgb_color_combos()
-    color_closure = Proc.new do |fg_color|
-      show_bg_color_for_each_fg_color(fg_color)
-    end
-
-    cycle_216_8bit_rgb_colors &color_closure
+    cycle_216_8bit_rgb_colors &method(:show_bg_color_for_each_fg_color)
   end
 end
 
