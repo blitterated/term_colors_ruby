@@ -63,6 +63,11 @@ module TerminalColorsDemo
     # Same reason for the modulus of 0 as separator above.
     print "\n" if (bg_color - 15) % 36 == 0
   end
+end
+
+class BackgroundColorByForegroundColor
+
+  include TerminalColorsDemo
 
   def show_bg_color_for_each_fg_color(fg_color)
     color_closure = Proc.new do |bg_color|
@@ -77,4 +82,4 @@ module TerminalColorsDemo
   end
 end
 
-Class.new.extend(TerminalColorsDemo).show_all_rgb_color_combos
+BackgroundColorByForegroundColor.new.show_all_rgb_color_combos
