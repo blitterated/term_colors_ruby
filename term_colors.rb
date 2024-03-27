@@ -38,7 +38,6 @@ module TerminalColorsDemo
     end
   end
 
-
   def show_bg_color_with_fg_color(fg_color, bg_color)
 
     # The separator pads changes in blue.
@@ -49,7 +48,9 @@ module TerminalColorsDemo
     separator = (bg_color - 15) % 6 == 0 ? "\n" : " "
 
     # Format the color numbers for display
-    color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
+    fmt_fg_color = fg_color.to_s.rjust(3, " ")
+    fmt_bg_color = bg_color.to_s.rjust(3, " ")
+    color_code_text = %Q(  #{fmt_fg_color}  #{fmt_bg_color}  )
 
     # ANSI magic!
     # Color numbers in foreground color on top of background color
