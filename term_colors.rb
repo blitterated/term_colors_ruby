@@ -33,19 +33,13 @@ module TerminalColorsDemo
   ColorNumbers = ColorCubeCoordinates.map { |r,g,b| 16 + (36 * r) + (6 * g) + b }
 
   def cycle_216_8bit_rgb_colors
-    ColorCubeCoordinates.each do |x, y, z|
-      yield(x, y, z)
+    ColorNumbers.each do |cn|
+      yield(cn)
     end
   end
 
-  def calculate_color_number(r, g, b)
-    16 + (36 * r) + (6 * g) + b
-  end
 
-  def show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
-    fg_color = calculate_color_number(fg_x, fg_y, fg_z)
-    bg_color = calculate_color_number(bg_x, bg_y, bg_z)
-
+  def show_bg_color_with_fg_color(fg_color, bg_color)
 
     # The separator pads changes in blue.
     # The newlines keep us withing the same color cube line/slice by green.
@@ -69,17 +63,17 @@ module TerminalColorsDemo
     print "\n" if (bg_color - 15) % 36 == 0
   end
 
-  def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
-    color_closure = Proc.new do |bg_x, bg_y, bg_z|
-      show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
+  def show_bg_color_for_each_fg_color(fg_color)
+    color_closure = Proc.new do |bg_color|
+      show_bg_color_with_fg_color(fg_color, bg_color)
     end
 
     cycle_216_8bit_rgb_colors &color_closure
   end
 
   def show_all_rgb_color_combos()
-    color_closure = Proc.new do |fg_x, fg_y, fg_z|
-      show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
+    color_closure = Proc.new do |fg_color|
+      show_bg_color_for_each_fg_color(fg_color)
     end
 
     cycle_216_8bit_rgb_colors &color_closure
