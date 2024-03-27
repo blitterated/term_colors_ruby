@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+# Run this script with this:
+#
+#     ruby term_colors.rb | less -R
+#
 # From Wikipedia:
 # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 #
@@ -44,11 +48,17 @@ module TerminalColorsDemo
 
     # Display the fg and bg color
     color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
-    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m "
+    # The separator pads changes in blue.
+    # The newlines keep us withing the same color cube line/slice by green.
+    # The modulo pivot is 3 because the ANSI RGB numbers start with 16.
+    # 16 divided by 4 is 3 with a modulo of 4.
+    separator = (bg_color) % 6 == 3 ? "\n" : " "
+    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m#{separator}"
     print ansi_output
 
-    # Output a newline every 6th change to stay within the same color cube slice
-    print "\n" if (bg_color + 1) % 6 == 4
+    # Output a newline every 36th change to stay within the same color cube slice of red.
+    # Same reason as separator above for the module of 3.
+    print "\n" if (bg_color) % 36 == 3
   end
 
   def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
