@@ -13,47 +13,59 @@
 # Algorithm for turning R, G, B into ANSI color number:
 # 16 + (36 × r) + (6 × g) + b
 
-def cycle_216_8bit_rgb_colors()
-  (0..5).do |x|
-    (0..5).do |y|
-      (0..5).do |z|
-        yield(x, y, z)
-      end
+module TerminalColorsDemo
+
+  ColorCubeCoordinates = (0..5).to_a.repeated_permutation(3).to_a
+  # ColorCubeCoordinates.each { |a| puts a.inspect }
+
+  ColorNumbers = ColorCubeCoordinates.map { |r,g,b| 16 + (36 * r) + (6 * g) + b }
+  class ColorCubeCoordinate
+    attr_reader :color_number, :x, :y, :z
+
+    def initialize(x, y, z)
+      @x = x; @y = y; @z = z
+      @color_number = 16 + (36 * @r) + (6 * @g) + @b
     end
   end
-end
 
-def calculate_color_number(r, g, b) {
-  16 + (36 * r) + (6 * g) + b
-end
-
-def show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
-  fg_color = calculate_color_number(fg_x, fg_y, fg_z)
-  bg_color = calculate_color_number(bg_x, bg_y, bg_z)
-
-  # Display the fg and bg color
-  color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
-  ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m"
-  print ansi_output
-
-  # Output a newline every 6th change to stay within the same color cube slice
-  print '\n' if [ ((bg_color + 1) % 6) = 4 ]
-end
-
-def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
-  color_closure = Proc.new do |bg_x, bg_y, bg_z|
-    show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
+  def cycle_216_8bit_rgb_colors
+    ColorCubeCoordinates.each |x, y, z|
+      yield(x, y, z)
+    end
   end
 
-  cycle_216_8bit_rgb_colors(&color_closure)
-end
-
-def show_all_rgb_color_combos()
-  color_closure = Proc.new do |fg_x, fg_y, fg_z|
-    show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
+  def calculate_color_number(r, g, b)
+    16 + (36 * r) + (6 * g) + b
   end
 
-  cycle_216_8bit_rgb_colors(&color_closure)
+  def show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
+    fg_color = calculate_color_number(fg_x, fg_y, fg_z)
+    bg_color = calculate_color_number(bg_x, bg_y, bg_z)
+
+    # Display the fg and bg color
+    color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
+    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m"
+    print ansi_output
+
+    # Output a newline every 6th change to stay within the same color cube slice
+    print '\n' if (bg_color + 1) % 6 == 4
+  end
+
+  def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
+    color_closure = Proc.new do |bg_x, bg_y, bg_z|
+      show_bg_color_with_fg_color(fg_x, fg_y, fg_z, bg_x, bg_y, bg_z)
+    end
+
+    cycle_216_8bit_rgb_colors &color_closure
+  end
+
+  def show_all_rgb_color_combos()
+    color_closure = Proc.new do |fg_x, fg_y, fg_z|
+      show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
+    end
+
+    cycle_216_8bit_rgb_colors &color_closure
+  end
 end
 
-show_all_rgb_color_combos
+TerminalColorsDemo.show_all_rgb_color_combos
