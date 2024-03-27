@@ -15,21 +15,21 @@
 
 module TerminalColorsDemo
 
-  ColorCubeCoordinates = (0..5).to_a.repeated_permutation(3).to_a
+  # Generate X, Y, Z coordinates for the color cube
+  # X == Red
+  # Y == Green
+  # Z == Blue
+  #
+  # View the coordinates with the following
   # ColorCubeCoordinates.each { |a| puts a.inspect }
+  ColorCubeCoordinates = (0..5).to_a.repeated_permutation(3).to_a
 
+  # Use the ANSI algorithm to convert color cube coordinates into an ANSI color number
+  # Turns out it's just (16..231) :shrug:
   ColorNumbers = ColorCubeCoordinates.map { |r,g,b| 16 + (36 * r) + (6 * g) + b }
-  class ColorCubeCoordinate
-    attr_reader :color_number, :x, :y, :z
-
-    def initialize(x, y, z)
-      @x = x; @y = y; @z = z
-      @color_number = 16 + (36 * @r) + (6 * @g) + @b
-    end
-  end
 
   def cycle_216_8bit_rgb_colors
-    ColorCubeCoordinates.each |x, y, z|
+    ColorCubeCoordinates.each do |x, y, z|
       yield(x, y, z)
     end
   end
@@ -44,11 +44,11 @@ module TerminalColorsDemo
 
     # Display the fg and bg color
     color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
-    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m"
+    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m "
     print ansi_output
 
     # Output a newline every 6th change to stay within the same color cube slice
-    print '\n' if (bg_color + 1) % 6 == 4
+    print "\n" if (bg_color + 1) % 6 == 4
   end
 
   def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
@@ -68,4 +68,4 @@ module TerminalColorsDemo
   end
 end
 
-TerminalColorsDemo.show_all_rgb_color_combos
+Class.new.extend(TerminalColorsDemo).show_all_rgb_color_combos
