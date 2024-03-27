@@ -46,19 +46,27 @@ module TerminalColorsDemo
     fg_color = calculate_color_number(fg_x, fg_y, fg_z)
     bg_color = calculate_color_number(bg_x, bg_y, bg_z)
 
-    # Display the fg and bg color
-    color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
+
     # The separator pads changes in blue.
     # The newlines keep us withing the same color cube line/slice by green.
-    # The modulo pivot is 3 because the ANSI RGB numbers start with 16.
-    # 16 divided by 4 is 3 with a modulo of 4.
-    separator = (bg_color) % 6 == 3 ? "\n" : " "
+    # The ANSI RGB numbers start with 16.
+    # 16 is essentially 0 in color value.
+    # To get a newline on a modulus of 0, we only subtract 15.
+    separator = (bg_color - 15) % 6 == 0 ? "\n" : " "
+
+    # Format the color numbers for display
+    color_code_text = %Q(  #{fg_color.to_s.rjust(3, " ")}  #{bg_color.to_s.rjust(3, " ")}  )
+
+    # ANSI magic!
+    # Color numbers in foreground color on top of background color
     ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m#{separator}"
+
+    # The money shot
     print ansi_output
 
     # Output a newline every 36th change to stay within the same color cube slice of red.
-    # Same reason as separator above for the module of 3.
-    print "\n" if (bg_color) % 36 == 3
+    # Same reason for the modulus of 0 as separator above.
+    print "\n" if (bg_color - 15) % 36 == 0
   end
 
   def show_bg_color_for_each_fg_color(fg_x, fg_y, fg_z)
