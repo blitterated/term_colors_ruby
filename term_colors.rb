@@ -32,54 +32,62 @@ module TerminalColorsDemo
   # Turns out it's just (16..231) :shrug:
   ColorNumbers = ColorCubeCoordinates.map { |r,g,b| 16 + (36 * r) + (6 * g) + b }
 
-  def cycle_216_8bit_rgb_colors
-    ColorNumbers.each do |cn|
-      yield(cn)
+  class TileLayerColorPair
+    attr_reader :fg, :bg
+
+    def initialize(fg, bg)
+      @fg = fg
+      @bg = bg
     end
   end
 
-  def show_bg_color_with_fg_color(fg_color, bg_color)
+  def show_colors_and_text(color_pair)
 
     # The separator pads changes in blue.
     # The newlines keep us withing the same color cube line/slice by green.
     # The ANSI RGB numbers start with 16.
     # 16 is essentially 0 in color value.
     # To get a newline on a modulus of 0, we only subtract 15.
-    separator = (bg_color - 15) % 6 == 0 ? "\n" : " "
+    separator = (color_pair.bg - 15) % 6 == 0 ? "\n" : " "
 
     # Format the color numbers for display
-    fmt_fg_color = fg_color.to_s.rjust(3, " ")
-    fmt_bg_color = bg_color.to_s.rjust(3, " ")
+    fmt_fg_color = color_pair.fg.to_s.rjust(3, " ")
+    fmt_bg_color = color_pair.bg.to_s.rjust(3, " ")
     color_code_text = %Q(  #{fmt_fg_color}  #{fmt_bg_color}  )
 
     # ANSI magic!
     # Color numbers in foreground color on top of background color
-    ansi_output = "\e[48;5;#{bg_color};38;5;#{fg_color}m#{color_code_text}\e[0m#{separator}"
+    ansi_output = "\e[48;5;#{color_pair.bg};38;5;#{color_pair.fg}m#{color_code_text}\e[0m#{separator}"
 
     # The money shot
     print ansi_output
 
     # Output a newline every 36th change to stay within the same color cube slice of red.
     # Same reason for the modulus of 0 as separator above.
-    print "\n" if (bg_color - 15) % 36 == 0
+    print "\n" if (color_pair.bg - 15) % 36 == 0
   end
 end
 
 class BackgroundColorByForegroundColor
-
   include TerminalColorsDemo
 
-  def show_bg_color_for_each_fg_color(fg_color)
-    color_closure = Proc.new do |bg_color|
-      show_bg_color_with_fg_color(fg_color, bg_color)
+  def show_tiles()
+    ColorNumbers.repeated_permutation(2).each do |f, b|
+      show_colors_and_text(TileLayerColorPair.new(f, b))
     end
-
-    cycle_216_8bit_rgb_colors &color_closure
-  end
-
-  def show_all_rgb_color_combos()
-    cycle_216_8bit_rgb_colors &method(:show_bg_color_for_each_fg_color)
   end
 end
 
-BackgroundColorByForegroundColor.new.show_all_rgb_color_combos
+class ForegroundColorByBackgroundColor
+  include TerminalColorsDemo
+
+  def show_tiles()
+    ColorNumbers.repeated_permutation(2).each do |f, b|
+      show_colors_and_text(TileLayerColorPair.new(b, f))
+    end
+  end
+end
+
+include TerminalColorsDemo
+BackgroundColorByForegroundColor.new.show_tiles
+#ForegroundColorByBackgroundColor.new.show_tiles
