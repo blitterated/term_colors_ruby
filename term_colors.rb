@@ -41,14 +41,25 @@ module TerminalColorsDemo
     end
   end
 
-  def show_colors_and_text(color_pair)
+  # A space char pads blue++ across layers in a line of tiles.
+  # A single newline sets up for the next layer in a line of tiles to blue++ across green++.
+  # Two newlines set up a new line of tiles for red++.
+  #
+  # 16 is essentially 0 in color value.
+  # To get a newline on a modulus of 0, we only subtract 15.
+  def tile_separator(color)
 
-    # The separator pads changes in blue.
-    # The newlines keep us withing the same color cube line/slice by green.
-    # The ANSI RGB numbers start with 16.
-    # 16 is essentially 0 in color value.
-    # To get a newline on a modulus of 0, we only subtract 15.
-    separator = (color_pair.bg - 15) % 6 == 0 ? "\n" : " "
+    # ANSI RGB numbers start at 16. Subtracting 15 allows for modulo 0.
+    ansi_adjusted = color - 15
+
+    case
+    when ansi_adjusted % 36 == 0; "\n\n"  # Red changes
+    when ansi_adjusted % 6 == 0; "\n"     # Green changes
+    else " "                              # Blue changes
+    end
+  end
+
+  def show_colors_and_text(color_pair, separator)
 
     # Format the color numbers for display
     fmt_fg_color = color_pair.fg.to_s.rjust(3, " ")
@@ -61,33 +72,41 @@ module TerminalColorsDemo
 
     # The money shot
     print ansi_output
-
-    # Output a newline every 36th change to stay within the same color cube slice of red.
-    # Same reason for the modulus of 0 as separator above.
-    print "\n" if (color_pair.bg - 15) % 36 == 0
   end
 end
 
+# Each layer across a line of tiles shows each progessive background value of Blue.
+# Each layer across a line of tiles shows a progressive background value of Green.
+# Each line of tiles shows a progressive background value of Red for 6 lines / 36 tiles.
+# Each set of 36 tiles shows a single progression of foreground color through B, G, and R.
 class BackgroundColorByForegroundColor
   include TerminalColorsDemo
 
   def show_tiles()
-    ColorNumbers.repeated_permutation(2).each do |f, b|
-      show_colors_and_text(TileLayerColorPair.new(f, b))
+    ColorNumbers.repeated_permutation(2).each do |fg, bg|
+      cp  = TileLayerColorPair.new(fg, bg)
+      sep = tile_separator(bg)
+      show_colors_and_text(cp, sep)
     end
   end
 end
 
+# Each layer across a line of tiles shows each progessive foreground value of Blue.
+# Each layer across a line of tiles shows a progressive foreground value of Green.
+# Each line of tiles shows a progressive foreground value of Red for 6 lines / 36 tiles.
+# Each set of 36 tiles shows a single progression of background color through B, G, and R.
 class ForegroundColorByBackgroundColor
   include TerminalColorsDemo
 
   def show_tiles()
-    ColorNumbers.repeated_permutation(2).each do |f, b|
-      show_colors_and_text(TileLayerColorPair.new(b, f))
+    ColorNumbers.repeated_permutation(2).each do |bg, fg| # reversed!
+      cp  = TileLayerColorPair.new(fg, bg)
+      sep = tile_separator(fg)
+      show_colors_and_text(cp, sep)
     end
   end
 end
 
-include TerminalColorsDemo
-BackgroundColorByForegroundColor.new.show_tiles
-#ForegroundColorByBackgroundColor.new.show_tiles
+#include TerminalColorsDemo
+#BackgroundColorByForegroundColor.new.show_tiles
+#oregroundColorByBackgroundColor.new.show_tiles
