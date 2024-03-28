@@ -19,6 +19,14 @@
 
 module TerminalColors
 
+  class ColorPoint
+    attr_reader :r, :g, :b, :ansi_num
+    def initialize(r, g, b)
+      @r = r; @g = g; @b = b
+      @ansi_num = 16 + (36 * r) + (6 * g) + b
+    end
+  end
+
   # Generate color cube with coordinates and ANSI color numbers.
   # x == Red
   # y == Green
@@ -28,15 +36,15 @@ module TerminalColors
 
     # Use the ANSI algorithm to convert color cube coordinates into an ANSI color number
     # Turns out it's just (16..231) :shrug:
-    @cube = @coords.map { |r, g, b| [[r, g, b], 16 + (36 * r) + (6 * g) + b] }.to_h
+    @cube = @coords.map { |r, g, b| ColorPoint.new(r, g, b) }
 
     class << self
       def bgr; @cube.dup; end
-      def brg; @cube.sort_by { |c,n| r,g,b = c; [g,r,b,n] }.to_h; end
-      def gbr; @cube.sort_by { |c,n| r,g,b = c; [r,b,g,n] }.to_h; end
-      def grb; @cube.sort_by { |c,n| r,g,b = c; [b,r,g,n] }.to_h; end
-      def rbg; @cube.sort_by { |c,n| r,g,b = c; [g,b,r,n] }.to_h; end
-      def rgb; @cube.sort_by { |c,n| r,g,b = c; [b,g,r,n] }.to_h; end
+      def brg; @cube.sort_by { |cp| [cp.g, cp.r, cp.b] }; end
+      def gbr; @cube.sort_by { |cp| [cp.r, cp.b, cp.g] }; end
+      def grb; @cube.sort_by { |cp| [cp.b, cp.r, cp.g] }; end
+      def rbg; @cube.sort_by { |cp| [cp.g, cp.b, cp.r] }; end
+      def rgb; @cube.sort_by { |cp| [cp.b, cp.g, cp.r] }; end
     end
   end
 
@@ -48,10 +56,10 @@ module TerminalColors
   #
   # 16 is essentially 0 in color value.
   # To get a newline on a modulus of 0, we only subtract 15.
-  def tile_separator(color:, rsep:, gsep:, bsep:)
+  def tile_separator(color_point:, rsep:, gsep:, bsep:)
 
     # ANSI RGB numbers start at 16. Subtracting 15 allows for modulo 0.
-    ansi_adjusted = color - 15
+    ansi_adjusted = color_point.ansi_num - 15
 
     case
     when ansi_adjusted % 36 == 0; rsep  # Red changes
@@ -60,16 +68,20 @@ module TerminalColors
     end
   end
 
+  def format_ansi_number(ansi_num)
+    ansi_num.to_s.rjust(3, " ")
+  end
+
   def show_colors_and_text(fg, bg, separator)
 
     # Format the color numbers for display
-    fmt_fg_color = fg.to_s.rjust(3, " ")
-    fmt_bg_color = bg.to_s.rjust(3, " ")
-    color_code_text = %Q(  #{fmt_fg_color}  #{fmt_bg_color}  )
+    fg_formatted = format_ansi_number(fg.ansi_num)
+    bg_formatted = format_ansi_number(bg.ansi_num)
+    color_code_text = %Q(  #{fg_formatted}  #{bg_formatted}  )
 
     # ANSI magic!
     # Color numbers in foreground color on top of background color
-    ansi_output = "\e[48;5;#{bg};38;5;#{fg}m#{color_code_text}\e[0m#{separator}"
+    ansi_output = "\e[48;5;#{bg.ansi_num};38;5;#{fg.ansi_num}m#{color_code_text}\e[0m#{separator}"
 
     # The money shot
     print ansi_output
@@ -87,8 +99,8 @@ module TerminalColors
         Class.new do
           include TerminalColors
           def show_tiles()
-            AnsiColorCube.bgr.values.repeated_permutation(2).each do |fg, bg|
-              sep = tile_separator(color: bg,
+            AnsiColorCube.bgr.repeated_permutation(2).each do |fg, bg|
+              sep = tile_separator(color_point: bg,
                                    rsep: Separator.block_line,
                                    gsep: Separator.line_layer,
                                    bsep: Separator.block)
@@ -107,8 +119,8 @@ module TerminalColors
         Class.new do
           include TerminalColors
           def show_tiles()
-            AnsiColorCube.bgr.values.repeated_permutation(2).each do |bg, fg| # <== Reversed Args!
-              sep = tile_separator(color: fg,
+            AnsiColorCube.bgr.repeated_permutation(2).each do |bg, fg| # <== Reversed Args!
+              sep = tile_separator(color_point: fg,
                                    rsep: Separator.block_line,
                                    gsep: Separator.line_layer,
                                    bsep: Separator.block)
@@ -123,8 +135,8 @@ module TerminalColors
         Class.new do
           include TerminalColors
           def show_tiles()
-            AnsiColorCube.rgb.values.repeated_permutation(2).each do |fg, bg|
-              sep = tile_separator(color: bg,
+            AnsiColorCube.rgb.repeated_permutation(2).each do |fg, bg|
+              sep = tile_separator(color_point: bg,
                                    rsep: Separator.block,
                                    gsep: Separator.line_layer,
                                    bsep: Separator.block_line)
