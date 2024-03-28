@@ -17,7 +17,7 @@
 # Algorithm for turning R, G, B into ANSI color number:
 # 16 + (36 × r) + (6 × g) + b
 
-module TerminalColorsDemo
+module TerminalColors
 
   # Generate color cube with coordinates and ANSI color numbers.
   # x == Red
@@ -74,58 +74,66 @@ module TerminalColorsDemo
     # The money shot
     print ansi_output
   end
-end
 
-# Each layer across a line of tiles shows each progessive background value of Blue.
-# Each layer across a line of tiles shows a progressive background value of Green.
-# Each line of tiles shows a progressive background value of Red for 6 lines / 36 tiles.
-# Each set of 36 tiles shows a single progression of foreground color through B, G, and R.
-class BGR_bg_fg
-  include TerminalColorsDemo
+  module Demos
 
-  def show_tiles()
-    AnsiColorCube.bgr.values.repeated_permutation(2).each do |fg, bg|
-      sep = tile_separator(color: bg,
-                           rsep: Separator.block_line,
-                           gsep: Separator.line_layer,
-                           bsep: Separator.block)
-      show_colors_and_text(fg, bg, sep)
+    class << self
+
+      # Each layer across a line of tiles shows each progessive background value of Blue.
+      # Each layer across a line of tiles shows a progressive background value of Green.
+      # Each line of tiles shows a progressive background value of Red for 6 lines / 36 tiles.
+      # Each set of 36 tiles shows a single progression of foreground color through B, G, and R.
+      def bgr
+        Class.new do
+          include TerminalColors
+          def show_tiles()
+            AnsiColorCube.bgr.values.repeated_permutation(2).each do |fg, bg|
+              sep = tile_separator(color: bg,
+                                   rsep: Separator.block_line,
+                                   gsep: Separator.line_layer,
+                                   bsep: Separator.block)
+              show_colors_and_text(fg, bg, sep)
+            end
+          end
+        end.new.show_tiles
+        nil
+      end
+
+      # Each layer across a line of tiles shows each progessive foreground value of Blue.
+      # Each layer across a line of tiles shows a progressive foreground value of Green.
+      # Each line of tiles shows a progressive foreground value of Red for 6 lines / 36 tiles.
+      # Each set of 36 tiles shows a single progression of background color through B, G, and R.
+      def bgr_inv
+        Class.new do
+          include TerminalColors
+          def show_tiles()
+            AnsiColorCube.bgr.values.repeated_permutation(2).each do |bg, fg| # <== Reversed Args!
+              sep = tile_separator(color: fg,
+                                   rsep: Separator.block_line,
+                                   gsep: Separator.line_layer,
+                                   bsep: Separator.block)
+              show_colors_and_text(fg, bg, sep)
+            end
+          end
+        end.new.show_tiles
+        nil
+      end
+
+      def rgb
+        Class.new do
+          include TerminalColors
+          def show_tiles()
+            AnsiColorCube.rgb.values.repeated_permutation(2).each do |fg, bg|
+              sep = tile_separator(color: bg,
+                                   rsep: Separator.block,
+                                   gsep: Separator.line_layer,
+                                   bsep: Separator.block_line)
+              show_colors_and_text(fg, bg, sep)
+            end
+          end
+        end.new.show_tiles
+        nil
+      end
     end
   end
 end
-
-# Each layer across a line of tiles shows each progessive foreground value of Blue.
-# Each layer across a line of tiles shows a progressive foreground value of Green.
-# Each line of tiles shows a progressive foreground value of Red for 6 lines / 36 tiles.
-# Each set of 36 tiles shows a single progression of background color through B, G, and R.
-class BGR_fg_bg
-  include TerminalColorsDemo
-
-  def show_tiles()
-    AnsiColorCube.bgr.values.repeated_permutation(2).each do |bg, fg| # <== Reversed Args!
-      sep = tile_separator(color: fg,
-                           rsep: Separator.block_line,
-                           gsep: Separator.line_layer,
-                           bsep: Separator.block)
-      show_colors_and_text(fg, bg, sep)
-    end
-  end
-end
-
-class RGB_bg_fg
-  include TerminalColorsDemo
-
-  def show_tiles()
-    AnsiColorCube.rgb.values.repeated_permutation(2).each do |fg, bg|
-      sep = tile_separator(color: bg,
-                           rsep: Separator.block,
-                           gsep: Separator.line_layer,
-                           bsep: Separator.block_line)
-      show_colors_and_text(fg, bg, sep)
-    end
-  end
-end
-
-#include TerminalColorsDemo
-#BGR_bg_fg.new.show_tiles
-#BGR_fg_bg.new.show_tiles
