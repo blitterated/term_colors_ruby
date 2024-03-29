@@ -92,6 +92,8 @@ module TerminalColors
     # Format the color numbers for display
     fg_formatted = format_color_number(fg.num)
     bg_formatted = format_color_number(bg.num)
+
+    # Spaces chars here are significant to formatting
     color_code_text = %Q(  #{fg_formatted}  #{bg_formatted}  )
 
     # ANSI magic!
@@ -102,26 +104,42 @@ module TerminalColors
     print ansi_output
   end
 
-  module Demos
+  class Demos
+
+    extend TerminalColors
 
     class << self
+
+      # Was using Array#repeated_permutation() until I read it doesn't guarantee ordering.
+      def build_color_pairs(color_cube)
+
+        # Create an array that repeats color_cube's elements one at a time, Array#size times each.
+        slow_changer = color_cube.then do |cc|
+          cc.inject([]) do |acc, a|
+            acc.push(*([a] * cc.size))
+          end
+        end
+
+        # Multiply color_cube by Array#size to repeat all elements in order, Array#size times.
+        fast_changer = color_cube * color_cube.size
+
+        slow_changer.zip(fast_changer)
+      end
+
+      def show_tiles(color_cube)
+        gen = TileSeparatorGen.new
+
+        build_color_pairs(color_cube).each do |fg, bg|
+          show_colors_and_text(fg, bg, gen.next_sep)
+        end
+        nil
+      end
 
       # Each layer across a line of tiles shows each progessive background value of Blue.
       # Each layer across a line of tiles shows a progressive background value of Green.
       # Each line of tiles shows a progressive background value of Red for 6 lines / 36 tiles.
       # Each set of 36 tiles shows a single progression of foreground color through B, G, and R.
-      def bgr
-        Class.new do
-          include TerminalColors
-          def show_tiles()
-            gen = TileSeparatorGen.new
-            AnsiColorCube.bgr.repeated_permutation(2).each do |fg, bg|
-              show_colors_and_text(fg, bg, gen.next_sep)
-            end
-          end
-        end.new.show_tiles
-        nil
-      end
+      def bgr; show_tiles(AnsiColorCube.bgr); end
 
       # Each layer across a line of tiles shows each progessive foreground value of Blue.
       # Each layer across a line of tiles shows a progressive foreground value of Green.
@@ -141,34 +159,21 @@ module TerminalColors
       end
 
       def rgb_list
-        Class.new do
-          include TerminalColors
-          def show_list
-            AnsiColorCube.rgb.repeated_permutation(2).each do |c1, c2|
-               puts  "#{c1}   |   #{c2}"
-            end
-          end
-        end.new.show_list
+        build_color_pairs(AnsiColorCube.rgb).each do |c1, c2|
+           puts  "#{c1}   |   #{c2}"
+        end
         nil
       end
 
-      def rgb
-        Class.new do
-          include TerminalColors
-          def show_tiles
-            gen = TileSeparatorGen.new
-            AnsiColorCube.rgb.repeated_permutation(2).each do |fg, bg|
-              show_colors_and_text(fg, bg, gen.next_sep)
-            end
-          end
-        end.new.show_tiles
-        nil
-      end
+      def rgb; show_tiles(AnsiColorCube.rgb); end
+
+      def gbr; show_tiles(AnsiColorCube.gbr); end
+
     end
   end
 end
 
-include TerminalColors
+#include TerminalColors
 #Demos.bgr
-Demos.rgb
+#Demos.rgb
 #Demos.rgb_list
