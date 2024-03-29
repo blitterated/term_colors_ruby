@@ -20,10 +20,14 @@
 module TerminalColors
 
   class ColorPoint
-    attr_reader :r, :g, :b, :ansi_num
-    def initialize(r, g, b)
-      @r = r; @g = g; @b = b
-      @ansi_num = 16 + (36 * r) + (6 * g) + b
+    attr_reader :r, :g, :b, :num
+
+    def initialize(r, g, b, num)
+      @r = r; @g = g; @b = b; @num = num
+    end
+
+    def to_s
+      sprintf "%i  %i  %i  %3i", @r, @g, @b, @num
     end
   end
 
@@ -36,52 +40,63 @@ module TerminalColors
 
     # Use the ANSI algorithm to convert color cube coordinates into an ANSI color number
     # Turns out it's just (16..231) :shrug:
-    @cube = @coords.map { |r, g, b| ColorPoint.new(r, g, b) }
+    @cube = @coords.map do |r, g, b|
+      ansi_num = 16 + (36 * r) + (6 * g) + b
+      ColorPoint.new(r, g, b, ansi_num)
+    end
 
     class << self
       def bgr; @cube.dup; end
-      def brg; @cube.sort_by { |cp| [cp.g, cp.r, cp.b] }; end
-      def gbr; @cube.sort_by { |cp| [cp.r, cp.b, cp.g] }; end
-      def grb; @cube.sort_by { |cp| [cp.b, cp.r, cp.g] }; end
-      def rbg; @cube.sort_by { |cp| [cp.g, cp.b, cp.r] }; end
-      def rgb; @cube.sort_by { |cp| [cp.b, cp.g, cp.r] }; end
+      def brg; @cube.sort_by { |c| [c.g, c.r, c.b] }; end
+      def gbr; @cube.sort_by { |c| [c.r, c.b, c.g] }; end
+      def grb; @cube.sort_by { |c| [c.b, c.r, c.g] }; end
+      def rbg; @cube.sort_by { |c| [c.g, c.b, c.r] }; end
+      def rgb; @cube.sort_by { |c| [c.b, c.g, c.r] }; end
     end
   end
 
-  Separator = Struct.new(:block_line, :line_layer, :block).new("\n\n", "\n", " ")
+  class TileSeparatorGen
+    def initialize
+      @tile_count = 0
 
-  # A space char pads blue++ across layers in a line of tiles.
-  # A single newline sets up for the next layer in a line of tiles to blue++ across green++.
-  # Two newlines set up a new line of tiles for red++.
-  #
-  # 16 is essentially 0 in color value.
-  # To get a newline on a modulus of 0, we only subtract 15.
-  def tile_separator(color_point:, rsep:, gsep:, bsep:)
+      @next_full_tile_row_newline = "\n\n"
+      @next_tile_layer_newline    = "\n"
+      @tile_spacer                = "  "
+    end
 
-    # ANSI RGB numbers start at 16. Subtracting 15 allows for modulo 0.
-    ansi_adjusted = color_point.ansi_num - 15
+    def next_sep
+      @tile_count += 1
 
-    case
-    when ansi_adjusted % 36 == 0; rsep  # Red changes
-    when ansi_adjusted % 6 == 0; gsep   # Green changes
-    else bsep                           # Blue changes
+      separator = case
+      when @tile_count % 36 == 0; @next_full_tile_row_newline
+      when @tile_count % 6 == 0;  @next_tile_layer_newline
+      else ;                      @tile_spacer
+      end
+
+      #puts %Q(sep: #{separator.inspect}, count:#{@tile_count})
+
+      separator
     end
   end
 
-  def format_ansi_number(ansi_num)
-    ansi_num.to_s.rjust(3, " ")
+  class DummySeparatorGen
+    def next_sep; ""; end
   end
 
-  def show_colors_and_text(fg, bg, separator)
+  def format_color_number(color_num)
+    color_num.to_s.rjust(3, " ")
+  end
+
+  def show_colors_and_text(fg, bg, sep)
 
     # Format the color numbers for display
-    fg_formatted = format_ansi_number(fg.ansi_num)
-    bg_formatted = format_ansi_number(bg.ansi_num)
+    fg_formatted = format_color_number(fg.num)
+    bg_formatted = format_color_number(bg.num)
     color_code_text = %Q(  #{fg_formatted}  #{bg_formatted}  )
 
     # ANSI magic!
     # Color numbers in foreground color on top of background color
-    ansi_output = "\e[48;5;#{bg.ansi_num};38;5;#{fg.ansi_num}m#{color_code_text}\e[0m#{separator}"
+    ansi_output = "\e[48;5;#{bg.num};38;5;#{fg.num}m#{color_code_text}\e[0m#{sep}"
 
     # The money shot
     print ansi_output
@@ -99,12 +114,9 @@ module TerminalColors
         Class.new do
           include TerminalColors
           def show_tiles()
+            gen = TileSeparatorGen.new
             AnsiColorCube.bgr.repeated_permutation(2).each do |fg, bg|
-              sep = tile_separator(color_point: bg,
-                                   rsep: Separator.block_line,
-                                   gsep: Separator.line_layer,
-                                   bsep: Separator.block)
-              show_colors_and_text(fg, bg, sep)
+              show_colors_and_text(fg, bg, gen.next_sep)
             end
           end
         end.new.show_tiles
@@ -119,28 +131,34 @@ module TerminalColors
         Class.new do
           include TerminalColors
           def show_tiles()
+            gen = TileSeparatorGen.new
             AnsiColorCube.bgr.repeated_permutation(2).each do |bg, fg| # <== Reversed Args!
-              sep = tile_separator(color_point: fg,
-                                   rsep: Separator.block_line,
-                                   gsep: Separator.line_layer,
-                                   bsep: Separator.block)
-              show_colors_and_text(fg, bg, sep)
+              show_colors_and_text(fg, bg, gen.next_sep)
             end
           end
         end.new.show_tiles
         nil
       end
 
+      def rgb_list
+        Class.new do
+          include TerminalColors
+          def show_list
+            AnsiColorCube.rgb.repeated_permutation(2).each do |c1, c2|
+               puts  "#{c1}   |   #{c2}"
+            end
+          end
+        end.new.show_list
+        nil
+      end
+
       def rgb
         Class.new do
           include TerminalColors
-          def show_tiles()
+          def show_tiles
+            gen = TileSeparatorGen.new
             AnsiColorCube.rgb.repeated_permutation(2).each do |fg, bg|
-              sep = tile_separator(color_point: bg,
-                                   rsep: Separator.block,
-                                   gsep: Separator.line_layer,
-                                   bsep: Separator.block_line)
-              show_colors_and_text(fg, bg, sep)
+              show_colors_and_text(fg, bg, gen.next_sep)
             end
           end
         end.new.show_tiles
@@ -149,3 +167,8 @@ module TerminalColors
     end
   end
 end
+
+include TerminalColors
+#Demos.bgr
+Demos.rgb
+#Demos.rgb_list
