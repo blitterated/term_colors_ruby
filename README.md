@@ -11,7 +11,7 @@ On modern computers, this usually just means setting the following environment v
    export TERM=xterm-256color
    ```
 
-[Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit) mentions that ANSI color values from 16 - 231 are used to represent colors in a 6 x 6 x 6 color cube.r
+[Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit) mentions that ANSI color values from 16 - 231 are used to represent colors in a 6 x 6 x 6 color cube.
 This script will output those colors 6 per line to more accurately represent a "slice" through the color cube.
 
 This also means that the script outputs 7,776 (46,656/6) lines to the terminal. To view these at human readable speed, you can pipe the script into `less` with a switch to prevent displaying ANSI escape sequences literally.
