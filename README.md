@@ -17,5 +17,5 @@ This script will output those colors 6 per line to more accurately represent a "
 This also means that the script outputs 7,776 (46,656/6) lines to the terminal. To view these at human readable speed, you can pipe the script into `less` with a switch to prevent displaying ANSI escape sequences literally.
 
    ```sh
-   ./term_colors.rbg | less -R
+   ./term_colors.rb | less -R
    ```
