@@ -148,6 +148,13 @@ module TerminalColors
 
   # FEED ME A SYMBOL
   def separate_colors(cube_sort)
+    throw "cube_sort parameter only takes a Symbol" if cube_sort.class != Symbol
+
+    cube_sort_symbols = [:bgr, :brg, :gbr, :grb, :rbg, :rgb]
+    unless cube_sort_symbols.include? cube_sort
+      throw "cube_sort parameter must be one of the following symbols: #{cube_sort_symbols.to_s}" 
+    end
+
     row_set = AnsiColorCube.send(cube_sort)[0..215]
 
     # 16 + (36 * r) + (6 * g) + b
