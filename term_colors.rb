@@ -152,7 +152,7 @@ module TerminalColors
 
     cube_sort_symbols = [:bgr, :brg, :gbr, :grb, :rbg, :rgb]
     unless cube_sort_symbols.include? cube_sort
-      throw "cube_sort parameter must be one of the following symbols: #{cube_sort_symbols.to_s}" 
+      throw "cube_sort parameter must be one of the following symbols: #{cube_sort_symbols.to_s}"
     end
 
     row_set = AnsiColorCube.send(cube_sort)[0..215]
@@ -167,7 +167,6 @@ module TerminalColors
       when 'r'; show_tiles_only(red_cube)
       when 'g'; show_tiles_only(green_cube)
       when 'b'; show_tiles_only(blue_cube)
-      else    ; throw %Q("#{c}" is not a sortable color)
       end
     end
   end
