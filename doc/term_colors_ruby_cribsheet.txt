@@ -1,0 +1,183 @@
+Block lines are written from left to right.
+
+Background color changes
+Blue gets stronger going to the right in a single layer of a line of blocks.
+Green gets stronger going down each layer in a line of blocks.
+Red gets stronger in each line of blocks for every six lines
+
+Foreground color changes
+Blue gets stronger with every six lines of blocks 
+Blue gets stronger with every thirty six (6*6) lines of blocks 
+Blue gets stronger with every two hundred and sixteen (6*6*6) lines of blocks 
+
+
+--------------------------------------------------------------------------------
+
+
+68 more lines; after #1  2024/03/26 02:16:25
+1 change; after #182  2024/03/26 03:25:25
+2 fewer lines; before #289  2024/03/26 04:42:32
+1 change; after #322  2024/03/26 04:54:59
+1 more line; after #386  2024/03/26 05:18:48
+1 more line; before #387  2024/03/26 05:22:16
+1 line less; before #434  2024/03/26 05:33:00
+
+
+--------------------------------------------------------------------------------
+
+
+What's next?
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+
+cube = (0..5).to_a.repeated_permutation(3).map { |r, g, b| [[r, g, b], 16 + (36 * r) + (6 * g) + b] }.to_h
+cube.sort_by { |c,n| r,g,b = c; [r,g,b,n] }.to_h
+cube.sort_by { |c,n| r,g,b = c; [b,g,r,n] }.to_h
+
+
+coords = (0..5).to_a.repeated_permutation(3).to_a
+cube = coords.map { |r, g, b| [[r, g, b], 16 + (36 * r) + (6 * g) + b] }.to_h; nil
+puts cube.inspect
+puts cube.sort_by { |c,n| r,g,b = c; [r,g,b,n] }.to_h; nil
+puts cube.sort_by { |c,n| r,g,b = c; [r,g,b,n] }.inspect; nil
+
+
+AnsiColorCube.bgr.values.repeated_permutation(2).each do |fg, bg|
+AnsiColorCube.bgr.repeated_permutation(2).each do |fg, bg|
+
+
+gen = TileSeparatorGen.new
+7.times { puts gen.next_sep }
+
+
+# Look up ColorPoint by color number
+AnsiColorCube.bgr.select { |c| c.num == 51 }[0].then { |c| [c.r, c.g, c.b, c.num] }
+=> [0, 5, 5, 51]
+
+# generate coordinate inversion lookup
+(0..5).to_a.then { |a| a.zip(a.reverse) }
+=> [[0, 5], [1, 4], [2, 3], [3, 2], [4, 1], [5, 0]]
+
+# zipping multiplied arrays together
+[2] pry(main)> [0,1]
+=> [0, 1]
+[3] pry(main)> [0,1] * 8
+=> [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+[4] pry(main)> [[0,1]] * 8
+=> [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]]
+[5] pry(main)> [[0,1]] << [[2,3]]
+=> [[0, 1], [[2, 3]]]
+[6] pry(main)> [[0,1]] + [[2,3]]
+=> [[0, 1], [2, 3]]
+[7] pry(main)> [[0,1]] += [[2,3]]
+SyntaxError: unexpected tOP_ASGN, expecting end-of-input
+[[0,1]] += [[2,3]]
+        ^~
+[7] pry(main)> [[0,1]] << *[[2,3]]
+SyntaxError: unexpected *
+[[0,1]] << *[[2,3]]
+           ^
+SyntaxError: unexpected '\n', expecting '.' or &. or :: or '['
+[7] pry(main)> [[0,1]].push(*[[2,3]])
+=> [[0, 1], [2, 3]]
+[8] pry(main)> [[0,1],[2,3]].push(*[[4,5],[6,7]])
+=> [[0, 1], [2, 3], [4, 5], [6, 7]]
+[9] pry(main)> ([[0,1]] * 8).push(*([[8,9]] * 8))
+=> [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [8, 9], [8, 9], [8, 9], [8, 9], [8, 9], [8, 9], [8, 9], [8, 9]]
+
+
+-> x { x.inject([]) { |acc, y| acc.push(*([y] * x.size)) } }[[[0, 1], [2, 3], [4, 5]]]
+=> [[0, 1], [0, 1], [0, 1], [2, 3], [2, 3], [2, 3], [4, 5], [4, 5], [4, 5]]
+
+pry(main)> -> x { x.inject([]) { |acc, y| acc.push(*([y] * x.size)) }.zip(x * x.size) }[[[0, 1], [2, 3], [4, 5]]]
+=>
+ [[[0, 1], [0, 1]],
+ [[0, 1], [2, 3]],
+ [[0, 1], [4, 5]],
+ [[2, 3], [0, 1]],
+ [[2, 3], [2, 3]],
+ [[2, 3], [4, 5]],
+ [[4, 5], [0, 1]],
+ [[4, 5], [2, 3]],
+ [[4, 5], [4, 5]]]
+
+
+# method overloading with arrays
+
+def foo(cubes, inv = false)
+  puts "inv: #{inv}"
+  puts "cubes:\n#{cubes.inspect}"
+
+  c1, c2 = cubes
+  puts "c1:\n#{c1.inspect}"
+  puts "c2:\n#{c2.inspect}"
+end
+
+[22] pry(main)> foo [[1,1,1],[2,2,2]]
+inv: false
+cubes:
+[[1, 1, 1], [2, 2, 2]]
+c1:
+[1, 1, 1]
+c2:
+[2, 2, 2]
+=> nil
+
+[23] pry(main)> foo [[1,1,1],[2,2,2]], true
+inv: true
+cubes:
+[[1, 1, 1], [2, 2, 2]]
+c1:
+[1, 1, 1]
+c2:
+[2, 2, 2]
+=> nil
+
+[24] pry(main)> foo [[1,1,1]]
+inv: false
+cubes:
+[[1, 1, 1]]
+c1:
+[1, 1, 1]
+c2:
+nil
+=> nil
+
+[25] pry(main)> foo [[1,1,1]], true
+inv: true
+cubes:
+[[1, 1, 1]]
+c1:
+[1, 1, 1]
+c2:
+nil
+=> nil
+
+
+
+[26] pry(main)> [[1,1,1],[2,2,2]].size
+=> 2
+
+[27] pry(main)> [[1,1,1]] * 2
+=> [[1, 1, 1], [1, 1, 1]]
+
+def foo(cubes, inv = false)
+  puts "inv: #{inv}"
+  puts "cubes:\n#{cubes.inspect}"
+
+  c1, c2 = cubes.size > 2 ? cubes : cubes * 2
+  puts "c1:\n#{c1.inspect}"
+  puts "c2:\n#{c2.inspect}"
+end
+
